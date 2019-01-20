@@ -22,14 +22,74 @@
 
         var map = L.map('map');
 
-
         var vectorTileStyling = {
-            "Routable Tiles": {
-                weight: 1,
-                fillColor: 'black',
-                color: 'black',
-                fillOpacity: 1,
-                opacity: 1
+            "Routable Tiles": (properties) => {
+                if (properties.highway === "osm:motorway") {
+                    return {
+                        weight: 3,
+                        fillColor: 'black',
+                        color: 'orange',
+                        fillOpacity: 1,
+                        opacity: 0.9,
+                        radius: 5
+                    };
+                } else  if (properties.highway === "osm:motorway_link" ) {
+                    return {
+                        weight: 2,
+                        fillColor: 'black',
+                        color: 'orange',
+                        fillOpacity: 0.6,
+                        opacity: 0.6
+                    };
+                }else if (properties.highway === "osm:footway") {
+                    return {
+                        weight: 0.5,
+                        color: 'green',
+                        dashArray: "2",
+                        fillOpacity: 0.9,
+                        opacity: 1
+                    };
+                } else if (properties.highway === "osm:cycleway") {
+                    return {
+                        weight: 0.5,
+                        color: 'red',
+                        dashArray: "2",
+                        fillOpacity: 0.9,
+                        opacity: 1
+                    };
+                }else if (properties.highway ===  "") {
+                   return null;
+			        /*tunnel: {	// mapbox only
+				weight: 0.5,
+				fillColor: '#f2b648',
+				color: '#f2b648',
+				fillOpacity: 0.2,
+				opacity: 0.4,
+// 					dashArray: [4, 4]
+			},
+			bridge: {	// mapbox only
+				weight: 0.5,
+				fillColor: '#f2b648',
+				color: '#f2b648',
+				fillOpacity: 0.2,
+				opacity: 0.4,
+// 					dashArray: [4, 4]
+			}   */
+                }else {
+                    return {
+                        weight: 1,
+				        fillColor: '#f2b648',
+				        color: "gray",
+				        fillOpacity: 0.6,
+				        opacity: 0.8/*
+                        weight: 1,
+                        fillColor: 'black',
+                        color: 'black',
+                        fillOpacity: 1,
+                        opacity: 1,
+                        radius: 5*/
+                    };
+                }s
             }
         };
 
