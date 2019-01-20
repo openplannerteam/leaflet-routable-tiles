@@ -20,7 +20,11 @@
     <script src='dist/main.js'></script>
     <script>
 
-        var map = L.map('map');
+        var map = L.map('map', {
+            zoomControl: false,
+            minZoom: 14,
+            maxZoom: 14
+        });
 
         var vectorTileStyling = {
             "Routable Tiles": (properties) => {
