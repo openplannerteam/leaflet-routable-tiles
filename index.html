@@ -16,7 +16,21 @@
 <body style='margin:0'>
 
     <div id="map" style="width: 100vw; height: 100vh; background: white"></div>
-
+    <div id="selectordiv" style="position: absolute; left: 80vw; top: 2em;">
+        <select name="city-selector">
+            <option value="[51.053822,3.722270]">Ghent, Belgium</option>
+            <option value="[51.219448,4.402464]">Antwerp, Belgium</option>
+            <option value="[40.730610, -73.935242]">New York, US</option>
+            <option value="[52.373169,4.890660]">Amsterdam, NL</option>
+            <option value="[37.774929,-122.419418]">San Francisco, US</option>
+            <option value="[45.434330,6.637370]">French Alps</option>
+            <option value="[43.811340,5.595570]">Mt. Ventoux, France</option>
+            <option value="[60.391262,5.322054]">Bergen, Norway</option>
+            <option value="[35.689487,139.691711]">Tokyo, Japan</option>
+            <option value="[-33.851520,18.544150]">Capetown, South Africa</option>
+            <option value="[-4.315173,15.295873]">Kinshasa, Congo</option>
+        </select>
+    </div>
     <script src='dist/main.js'></script>
     <script>
 
@@ -25,6 +39,21 @@
             minZoom: 14,
             maxZoom: 14
         });
+
+        if(window.location.hash) {
+
+        }
+
+        //Process when a city is selected in the selector
+        document.addEventListener('DOMContentLoaded',function() {
+            document.querySelector('select[name="city-selector"]').onchange=changeEventHandler;
+        }, false);
+
+        function changeEventHandler(event) {
+            var parsedLatLong = JSON.parse(event.target.value);
+            map.setView(parsedLatLong, 14);
+        }
+
 
         var vectorTileStyling = {
             "Routable Tiles": (properties) => {
