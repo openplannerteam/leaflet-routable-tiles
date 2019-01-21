@@ -41,8 +41,28 @@
         });
 
         if(window.location.hash) {
+            let arguments = window.location.hash.substr(1).split('&');
+            let point = [];
+            for (let arg of arguments) {
+                var [key, val] = arg.split("=");
+                if (key === 'latitude')
+                    point[0] = parseFloat(val);
+                else if (key === 'longitude')
+                    point[1] = parseFloat(val);
+            }
+            document.querySelector('select[name="city-selector"]').value = '';
+            map.setView(point, 14);
+        } else {
+            //Focus on Ghent (the first item in the list)
+            map.setView({ lat: 51.02610, lng: 3.72071 }, 14);
 
         }
+
+        map.addEventListener("moveend", function () {
+            let latlng = map.getCenter();
+            console.log(latlng);
+            window.location.hash = "#latitude=" + latlng.lat + "&longitude=" + latlng.lng;
+        });
 
         //Process when a city is selected in the selector
         document.addEventListener('DOMContentLoaded',function() {
@@ -133,12 +153,7 @@
             vectorTileLayerStyles: vectorTileStyling
         };
 
-        var routableTilesLayer = L.vectorGrid.routableTiles(routableTilesUrl, routableTilesOptions).addTo(map);
-
-        let arguments = null;
-        //First check arguments in the URL #map=14/58.4/21.4
-        map.setView({ lat: 51.02610, lng: 3.72071 }, 14);
-        
+        var routableTilesLayer = L.vectorGrid.routableTiles(routableTilesUrl, routableTilesOptions).addTo(map);        
 
     </script>
 </body>
