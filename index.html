@@ -60,7 +60,6 @@
 
         map.addEventListener("moveend", function () {
             let latlng = map.getCenter();
-            console.log(latlng);
             window.location.hash = "#latitude=" + latlng.lat + "&longitude=" + latlng.lng;
         });
 
