@@ -1,117 +1,160 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-
+  <head>
     <title>VectorGrid.RoutableTiles example</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"
+    />
     <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script>
-    <script type="text/javascript" src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
+    ></script>
     <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+  </head>
 
-</head>
-
-<body style='margin:0'>
+  <body style="margin:0">
     <div id="map" style="width: 100vw; height: 100vh; background: white"></div>
-  
+
     <div id="selectordiv" style="position: absolute; right: 10vw; top: 2em;">
-        <select name="city-selector">
-            <option value="[51.053822,3.722270]">Ghent, Belgium</option>
-            <option value="[51.219448,4.402464]">Antwerp, Belgium</option>
-            <option value="[40.730610, -73.935242]">New York, US</option>
-            <option value="[37.774929,-122.419418]">San Francisco, US</option>
-            <option value="[52.373169,4.890660]">Amsterdam, NL</option>
-            <option value="[45.434330,6.637370]">French Alps</option>
-            <option value="[43.811340,5.595570]">Mt. Ventoux, France</option>
-            <option value="[60.391262,5.322054]">Bergen, Norway</option>
-            <option value="[35.689487,139.691711]">Tokyo, Japan</option>
-            <option value="[-33.851520,18.544150]">Capetown, South Africa</option>
-            <option value="[-4.315173,15.295873]">Kinshasa, Congo</option>
-        </select>
+      <select name="city-selector">
+        <option value="[51.053822,3.722270]">Ghent, Belgium</option>
+        <option value="[51.219448,4.402464]">Antwerp, Belgium</option>
+        <option value="[48.864716, 2.349014]">Paris, France</option>
+        <option value="[40.730610, -73.935242]">New York, US</option>
+        <option value="[37.774929,-122.419418]">San Francisco, US</option>
+        <option value="[52.373169,4.890660]">Amsterdam, NL</option>
+        <option value="[45.434330,6.637370]">French Alps</option>
+        <option value="[43.811340,5.595570]">Mt. Ventoux, France</option>
+        <option value="[60.391262,5.322054]">Bergen, Norway</option>
+        <option value="[35.689487,139.691711]">Tokyo, Japan</option>
+        <option value="[-33.851520,18.544150]">Capetown, South Africa</option>
+        <option value="[-4.315173,15.295873]">Kinshasa, Congo</option>
+      </select>
     </div>
-    <script src='dist/main.js'></script>
+
+    <div id="notice" style="position: absolute; left: 25vw; top: 50vh; font-size: 2em;text-align: center">
+        Click 2 times anywhere on the map
+    </div>
+    <script src="dist/main.js"></script>
     <script>
+      var map = L.map("map", {
+        zoomControl: false,
+        minZoom: 14,
+        maxZoom: 14
+      });
+      let client = new RoutableTilesClient();
 
-        var map = L.map('map', {
-            zoomControl: false,
-            minZoom: 14,
-            maxZoom: 14
-        });
-
-        if(window.location.hash) {
-            let arguments = window.location.hash.substr(1).split('&');
-            let point = [];
-            for (let arg of arguments) {
-                var [key, val] = arg.split("=");
-                if (key === 'latitude')
-                    point[0] = parseFloat(val);
-                else if (key === 'longitude')
-                    point[1] = parseFloat(val);
-            }
-            document.querySelector('select[name="city-selector"]').value = '';
-            map.setView(point, 14);
+      var fromLatLng, toLatLng;
+      var lineLayer;
+      async function onMapClick(e) {
+        if (lineLayer) {
+          document.getElementById("notice").innerHTML = "Click 2 times anywhere on the map";
+          lineLayer.remove();
+          fromLatLng = undefined;
+          toLatLng = undefined;
+          lineLayer = undefined;
         } else {
-            //Focus on Ghent (the first item in the list)
-            map.setView({ lat: 51.02610, lng: 3.72071 }, 14);
+          if (!fromLatLng) {
+            document.getElementById("notice").innerHTML = "Click another time elsewhere";
+            fromLatLng = e.latlng;
+          } else {
+            document.getElementById("notice").innerHTML = "Downloading the right data...";
+            toLatLng = e.latlng;
+            let geojsonResult = await client.query(
+              Object.values(fromLatLng),
+              Object.values(toLatLng)
+            );
+            document.getElementById("notice").innerHTML = "Boom! Click again to reset the map.";
 
+
+            lineLayer = L.geoJSON(geojsonResult, {
+              style: { color: "#3b6790" }
+            }).addTo(map);
+          }
         }
+      }
 
-        map.addEventListener("moveend", function () {
-            let latlng = map.getCenter();
-            window.location.hash = "#latitude=" + latlng.lat + "&longitude=" + latlng.lng;
-        });
+      map.on("click", onMapClick);
 
-        //Process when a city is selected in the selector
-        document.addEventListener('DOMContentLoaded',function() {
-            document.querySelector('select[name="city-selector"]').onchange=changeEventHandler;
-        }, false);
-
-        function changeEventHandler(event) {
-            var parsedLatLong = JSON.parse(event.target.value);
-            map.setView(parsedLatLong, 14);
+      if (window.location.hash) {
+        let arguments = window.location.hash.substr(1).split("&");
+        let point = [];
+        for (let arg of arguments) {
+          var [key, val] = arg.split("=");
+          if (key === "latitude") point[0] = parseFloat(val);
+          else if (key === "longitude") point[1] = parseFloat(val);
         }
+        document.querySelector('select[name="city-selector"]').value = "";
+        map.setView(point, 14);
+      } else {
+        //Focus on Ghent (the first item in the list)
+        map.setView({ lat: 51.0261, lng: 3.72071 }, 14);
+      }
 
+      map.addEventListener("moveend", function() {
+        let latlng = map.getCenter();
+        window.location.hash =
+          "#latitude=" + latlng.lat + "&longitude=" + latlng.lng;
+      });
 
-        var vectorTileStyling = {
-            "Routable Tiles": (properties) => {
-                if (properties.highway === "osm:motorway") {
-                    return {
-                        weight: 3,
-                        fillColor: 'black',
-                        color: 'orange',
-                        fillOpacity: 1,
-                        opacity: 0.9,
-                        radius: 5
-                    };
-                } else  if (properties.highway === "osm:motorway_link" ) {
-                    return {
-                        weight: 2,
-                        fillColor: 'black',
-                        color: 'orange',
-                        fillOpacity: 0.6,
-                        opacity: 0.6
-                    };
-                }else if (properties.highway === "osm:footway") {
-                    return {
-                        weight: 0.5,
-                        color: 'green',
-                        dashArray: "2",
-                        fillOpacity: 0.9,
-                        opacity: 1
-                    };
-                } else if (properties.highway === "osm:cycleway") {
-                    return {
-                        weight: 0.5,
-                        color: 'red',
-                        dashArray: "2",
-                        fillOpacity: 0.9,
-                        opacity: 1
-                    };
-                }else if (properties.highway ===  "") {
-                   return null;
-			        /*tunnel: {	// mapbox only
+      //Process when a city is selected in the selector
+      document.addEventListener(
+        "DOMContentLoaded",
+        function() {
+          document.querySelector(
+            'select[name="city-selector"]'
+          ).onchange = changeEventHandler;
+        },
+        false
+      );
+
+      function changeEventHandler(event) {
+        var parsedLatLong = JSON.parse(event.target.value);
+        map.setView(parsedLatLong, 14);
+      }
+
+      var vectorTileStyling = {
+        "Routable Tiles": properties => {
+          if (properties.highway === "osm:motorway") {
+            return {
+              weight: 3,
+              fillColor: "black",
+              color: "orange",
+              fillOpacity: 1,
+              opacity: 0.9,
+              radius: 5
+            };
+          } else if (properties.highway === "osm:motorway_link") {
+            return {
+              weight: 2,
+              fillColor: "black",
+              color: "orange",
+              fillOpacity: 0.6,
+              opacity: 0.6
+            };
+          } else if (properties.highway === "osm:footway") {
+            return {
+              weight: 0.5,
+              color: "green",
+              dashArray: "2",
+              fillOpacity: 0.9,
+              opacity: 1
+            };
+          } else if (properties.highway === "osm:cycleway") {
+            return {
+              weight: 0.5,
+              color: "red",
+              dashArray: "2",
+              fillOpacity: 0.9,
+              opacity: 1
+            };
+          } else if (properties.highway === "") {
+            return null;
+            /*tunnel: {	// mapbox only
 				weight: 0.5,
 				fillColor: '#f2b648',
 				color: '#f2b648',
@@ -127,34 +170,37 @@
 				opacity: 0.4,
 // 					dashArray: [4, 4]
 			}   */
-                }else {
-                    return {
-                        weight: 1,
-				        fillColor: '#f2b648',
-				        color: "gray",
-				        fillOpacity: 0.6,
-				        opacity: 0.8/*
+          } else {
+            return {
+              weight: 1,
+              fillColor: "#f2b648",
+              color: "gray",
+              fillOpacity: 0.6,
+              opacity: 0.8 /*
                         weight: 1,
                         fillColor: 'black',
                         color: 'black',
                         fillOpacity: 1,
                         opacity: 1,
                         radius: 5*/
-                    };
-                }s
-            }
-        };
+            };
+          }
+          s;
+        }
+      };
 
-        var routableTilesUrl = "https://tiles.openplanner.team/planet/14/{x}/{y}/";
-        var routableTilesOptions = {
-            rendererFactory: L.canvas.tile,
-            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://www.mapbox.com/about/maps/">MapBox</a>',
-            vectorTileLayerStyles: vectorTileStyling
-        };
+      var routableTilesUrl =
+        "https://tiles.openplanner.team/planet/14/{x}/{y}/";
+      var routableTilesOptions = {
+        rendererFactory: L.canvas.tile,
+        attribution:
+          '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://www.mapbox.com/about/maps/">MapBox</a>',
+        vectorTileLayerStyles: vectorTileStyling
+      };
 
-        var routableTilesLayer = L.vectorGrid.routableTiles(routableTilesUrl, routableTilesOptions).addTo(map);        
-
+      var routableTilesLayer = L.vectorGrid
+        .routableTiles(routableTilesUrl, routableTilesOptions)
+        .addTo(map);
     </script>
-</body>
-
+  </body>
 </html>
